@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameBoardElement = document.getElementById('game-board');
     const scoreElement = document.getElementById('score');
     const startButton = document.getElementById('start-button');
+    // (추가) 홀드 박스 요소
+    const holdBoxElement = document.getElementById('hold-box');
 
     // --- 1. 게임 기본 설정 ---
     const GRID_WIDTH = 10; // 게임판 가로
@@ -22,6 +24,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastGhostPosition = null;
     let lastGhostShapeData = null;
 
+    // (추가) 홀드 박스 UI용 변수
+    let holdBoxCells = [];
+    const HOLD_GRID_SIZE = 4; // 홀드 박스는 4x4
+
     // 'gameBoard'는 2차원 배열로, 게임의 상태를 저장합니다.
     let gameBoardModel = Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(0));
 
@@ -30,65 +36,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // prettier-ignore
     const PIECES = [
         {
-            name: 'T',
-            color: 'T', // CSS 클래스 이름
-            shapes: [
-                [ [0, 1, 0], [1, 1, 1], [0, 0, 0] ], // 1번 회전
-                [ [1, 0, 0], [1, 1, 0], [1, 0, 0] ], // 2번 회전
-                [ [0, 0, 0], [1, 1, 1], [0, 1, 0] ], // 3번 회전
-                [ [0, 1, 0], [0, 1, 1], [0, 1, 0] ]  // 4번 회전
-            ]
+            name: 'T', color: 'T',
+            shapes: [ [ [0, 1, 0], [1, 1, 1], [0, 0, 0] ], [ [1, 0, 0], [1, 1, 0], [1, 0, 0] ], [ [0, 0, 0], [1, 1, 1], [0, 1, 0] ], [ [0, 1, 0], [0, 1, 1], [0, 1, 0] ] ]
         },
         {
-            name: 'O',
-            color: 'O',
-            shapes: [
-                [ [1, 1], [1, 1] ] // O는 회전해도 모양이 같음
-            ]
+            name: 'O', color: 'O',
+            shapes: [ [ [1, 1], [1, 1] ] ]
         },
         {
-            name: 'L',
-            color: 'L',
-            shapes: [
-                [ [0, 0, 1], [1, 1, 1], [0, 0, 0] ],
-                [ [1, 0, 0], [1, 0, 0], [1, 1, 0] ],
-                [ [0, 0, 0], [1, 1, 1], [1, 0, 0] ],
-                [ [0, 1, 1], [0, 0, 1], [0, 0, 1] ]
-            ]
+            name: 'L', color: 'L',
+            shapes: [ [ [0, 0, 1], [1, 1, 1], [0, 0, 0] ], [ [1, 0, 0], [1, 0, 0], [1, 1, 0] ], [ [0, 0, 0], [1, 1, 1], [1, 0, 0] ], [ [0, 1, 1], [0, 0, 1], [0, 0, 1] ] ]
         },
         {
-            name: 'J',
-            color: 'J',
-            shapes: [
-                [ [1, 0, 0], [1, 1, 1], [0, 0, 0] ],
-                [ [0, 1, 1], [0, 1, 0], [0, 1, 0] ],
-                [ [0, 0, 0], [1, 1, 1], [0, 0, 1] ],
-                [ [0, 1, 0], [0, 1, 0], [1, 1, 0] ]
-            ]
+            name: 'J', color: 'J',
+            shapes: [ [ [1, 0, 0], [1, 1, 1], [0, 0, 0] ], [ [0, 1, 1], [0, 1, 0], [0, 1, 0] ], [ [0, 0, 0], [1, 1, 1], [0, 0, 1] ], [ [0, 1, 0], [0, 1, 0], [1, 1, 0] ] ]
         },
         {
-            name: 'I',
-            color: 'I',
-            shapes: [
-                [ [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0] ],
-                [ [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0] ]
-            ]
+            name: 'I', color: 'I',
+            shapes: [ [ [0, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 0, 0, 0] ], [ [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0] ] ]
         },
         {
-            name: 'S',
-            color: 'S',
-            shapes: [
-                [ [0, 1, 1], [1, 1, 0], [0, 0, 0] ],
-                [ [1, 0, 0], [1, 1, 0], [0, 1, 0] ]
-            ]
+            name: 'S', color: 'S',
+            shapes: [ [ [0, 1, 1], [1, 1, 0], [0, 0, 0] ], [ [1, 0, 0], [1, 1, 0], [0, 1, 0] ] ]
         },
         {
-            name: 'Z',
-            color: 'Z',
-            shapes: [
-                [ [1, 1, 0], [0, 1, 1], [0, 0, 0] ],
-                [ [0, 1, 0], [1, 1, 0], [1, 0, 0] ]
-            ]
+            name: 'Z', color: 'Z',
+            shapes: [ [ [1, 1, 0], [0, 1, 1], [0, 0, 0] ], [ [0, 1, 0], [1, 1, 0], [1, 0, 0] ] ]
         }
     ];
 
@@ -112,41 +85,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    /**
+     * (신규) 홀드 박스(HTML)를 생성하고 holdBoxCells 배열을 채웁니다.
+     */
+    function createHoldBox() {
+        for (let i = 0; i < HOLD_GRID_SIZE * HOLD_GRID_SIZE; i++) {
+            const cell = document.createElement('div');
+            cell.classList.add('hold-cell');
+            holdBoxElement.appendChild(cell);
+            holdBoxCells.push(cell);
+        }
+    }
+
     // --- 4. 게임 핵심 로직 ---
 
     /**
      * (수정) 새로운 랜덤 조각을 생성하고 위치를 설정합니다.
-     * (pieceToSpawn이 주어지면 해당 조각을 스폰합니다)
      */
     function spawnPiece(pieceToSpawn = null) {
         let newPiece;
         if (pieceToSpawn) {
             newPiece = pieceToSpawn;
         } else {
-            // 0부터 PIECES 배열 길이 사이의 랜덤 숫자
             const randomIndex = Math.floor(Math.random() * PIECES.length);
             newPiece = PIECES[randomIndex];
         }
         
         currentPiece = {
-            ...newPiece, // 이름, 색상, 모양 배열 복사
-            shape: newPiece.shapes[0] // 현재 모양은 첫 번째 회전 상태
+            ...newPiece,
+            shape: newPiece.shapes[0]
         };
-        
         currentRotation = 0;
-        
-        // 시작 위치 (상단 중앙)
         currentPosition = { 
-            x: Math.floor(GRID_WIDTH / 2) - 1, // 중앙 정렬
+            x: Math.floor(GRID_WIDTH / 2) - 1,
             y: 0 
         };
 
-        // 스폰되자마자 충돌하면 (쌓인 블록이 맨 위까지 찼으면) 게임 오버
         if (checkCollision(0, 0, currentPiece.shape)) {
             gameOver();
         } else {
-            drawPiece(); // 충돌하지 않으면 블록을 그립니다.
-            updateGhostPiece(); // (추가) 고스트 피스 업데이트
+            drawPiece();
+            updateGhostPiece(); 
         }
     }
 
@@ -159,10 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (value === 1) {
                     const boardX = currentPosition.x + x;
                     const boardY = currentPosition.y + y;
-                    
                     if (boardY < GRID_HEIGHT && boardX < GRID_WIDTH) {
                         const cellIndex = boardY * GRID_WIDTH + boardX;
-                        
                         if (gridCells[cellIndex]) {
                             gridCells[cellIndex].classList.add(currentPiece.color);
                         }
@@ -193,23 +170,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * 충돌 검사 (가장 중요!)
+     * 충돌 검사
      */
     function checkCollision(xOffset, yOffset, shape) {
         for (let y = 0; y < shape.length; y++) {
             for (let x = 0; x < shape[y].length; x++) {
-                
                 if (shape[y][x] === 1) {
-                    
                     let newX = currentPosition.x + x + xOffset;
                     let newY = currentPosition.y + y + yOffset;
 
-                    // 1. 벽(좌, 우, 바닥)에 충돌하는가?
                     if (newX < 0 || newX >= GRID_WIDTH || newY >= GRID_HEIGHT) {
                         return true; 
                     }
-                    
-                    // 2. 다른 'locked'된 블록과 충돌하는가?
                     if (newY >= 0) {
                         if (gameBoardModel[newY][newX] !== 0) {
                             return true; 
@@ -231,7 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (value === 1) {
                     const boardX = currentPosition.x + x;
                     const boardY = currentPosition.y + y;
-                    
                     if (boardY >= 0) {
                         gameBoardModel[boardY][boardX] = currentPiece.color;
                     }
@@ -240,12 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         updateBoardView();
-        
         checkLines();
-
-        // (추가) 스왑 플래그 리셋
-        hasSwapped = false;
-
+        hasSwapped = false; // (수정) 스왑 플래그 리셋
         spawnPiece();
     }
     
@@ -254,10 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function checkLines() {
         let linesCleared = 0;
-
         for (let y = GRID_HEIGHT - 1; y >= 0; y--) {
             const isLineFull = gameBoardModel[y].every(cell => cell !== 0);
-
             if (isLineFull) {
                 linesCleared++;
                 gameBoardModel.splice(y, 1);
@@ -266,21 +231,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
+        // 점수 계산... (기존과 동일)
         switch (linesCleared) {
-            case 1:
-                score += 10;
-                break;
-            case 2:
-                score += 30;
-                break;
-            case 3:
-                score += 50;
-                break;
-            case 4: 
-                score += 100;
-                break;
+            case 1: score += 10; break;
+            case 2: score += 30; break;
+            case 3: score += 50; break;
+            case 4: score += 100; break;
         }
-
         scoreElement.textContent = score;
         
         if (linesCleared > 0) {
@@ -292,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * gameBoardModel(데이터)을 기반으로 HTML 뷰(화면)를 업데이트합니다.
      */
     function updateBoardView() {
-        // (추가) 고스트 피스 지우기 (보드 전체 업데이트 전)
+        // (수정) 고스트 피스 지우기
         if (lastGhostPosition && lastGhostShapeData) {
             lastGhostShapeData.forEach((row, y) => {
                 row.forEach((value, x) => {
@@ -305,22 +262,60 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             });
         }
-        lastGhostPosition = null; // 고스트 정보 초기화
+        lastGhostPosition = null;
         lastGhostShapeData = null;
 
+        // 메인 보드 업데이트 (기존과 동일)
         gameBoardModel.forEach((row, y) => {
             row.forEach((cellValue, x) => {
                 const cellIndex = y * GRID_WIDTH + x;
                 const cell = gridCells[cellIndex];
-                
                 cell.classList.remove('T', 'O', 'L', 'J', 'I', 'S', 'Z', 'locked', 'ghost');
-
                 if (cellValue !== 0) {
                     cell.classList.add(cellValue);
                     cell.classList.add('locked'); 
                 }
             });
         });
+    }
+
+    /**
+     * (신규) 홀드 박스(HTML)의 뷰를 업데이트합니다.
+     */
+    function updateHoldView(piece) {
+        // 1. 홀드 박스 초기화
+        holdBoxCells.forEach(cell => {
+            cell.classList.remove('T', 'O', 'L', 'J', 'I', 'S', 'Z');
+        });
+
+        if (piece) {
+            // 2. 조각의 기본 모양(첫 번째 회전)을 가져옴
+            const shape = piece.shapes[0];
+            
+            // 3. (선택) 조각을 4x4 중앙에 배치하기 위한 오프셋
+            let xOffset = 0;
+            let yOffset = 0;
+            if (piece.name === 'I') yOffset = -1; // I 조각
+            else if (piece.name === 'O') xOffset = 1; // O 조각
+            else yOffset = 1; // 3x3 조각들
+
+            // 4. 홀드 박스에 조각 그리기
+            shape.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value === 1) {
+                        const cellX = x + xOffset;
+                        const cellY = y + yOffset;
+                        
+                        if (cellX >= 0 && cellX < HOLD_GRID_SIZE && cellY >= 0 && cellY < HOLD_GRID_SIZE) {
+                           const cellIndex = cellY * HOLD_GRID_SIZE + cellX;
+                            if (holdBoxCells[cellIndex]) {
+                                holdBoxCells[cellIndex].classList.add(piece.color);
+                            }
+                        }
+                    }
+                });
+            });
+        }
     }
 
 
@@ -331,12 +326,11 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function moveDown() {
         if (isGameOver) return;
-
         if (!checkCollision(0, 1, currentPiece.shape)) {
             undrawPiece(); 
             currentPosition.y++; 
             drawPiece(); 
-            updateGhostPiece(); // (추가) 고스트 피스 업데이트
+            updateGhostPiece(); 
         } else {
             lockPiece(); 
         }
@@ -347,12 +341,11 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function moveLeft() {
         if (isGameOver) return;
-
         if (!checkCollision(-1, 0, currentPiece.shape)) {
             undrawPiece();
             currentPosition.x--;
             drawPiece();
-            updateGhostPiece(); // (추가) 고스트 피스 업데이트
+            updateGhostPiece(); 
         }
     }
 
@@ -361,64 +354,46 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function moveRight() {
         if (isGameOver) return;
-
         if (!checkCollision(1, 0, currentPiece.shape)) {
             undrawPiece();
             currentPosition.x++;
             drawPiece();
-            updateGhostPiece(); // (추가) 고스트 피스 업데이트
+            updateGhostPiece();
         }
     }
     
     /**
-     * (교체) 블록을 회전 (시계 방향)
-     * (간단한 월 킥 기능 포함)
+     * (교체) 블록을 회전 (월 킥 기능 포함)
      */
     function rotate() {
         if (isGameOver) return;
+        undrawPiece();
         
-        undrawPiece(); // 일단 현재 모양 지우기
-        
-        // 다음 회전 인덱스 계산
         const nextRotationIndex = (currentRotation + 1) % currentPiece.shapes.length;
         const rotatedShape = currentPiece.shapes[nextRotationIndex];
         
-        // 시도할 '킥' (이동) 오프셋 배열
-        const kickOffsets = [
-            [0, 0],   // 1. 제자리
-            [-1, 0],  // 2. 왼쪽 1칸
-            [1, 0],   // 3. 오른쪽 1칸
-        ];
-
+        const kickOffsets = [ [0, 0], [-1, 0], [1, 0] ];
         if (currentPiece.name === 'I') {
             kickOffsets.push([-2, 0]);
             kickOffsets.push([2, 0]);
         }
 
-        let rotationSuccess = false;
-
         for (const [xOffset, yOffset] of kickOffsets) { 
-            
             if (!checkCollision(xOffset, yOffset, rotatedShape)) {
-                // 충돌 안 하면 회전 및 킥(이동) 적용
                 currentRotation = nextRotationIndex;
                 currentPiece.shape = rotatedShape;
                 currentPosition.x += xOffset;
                 currentPosition.y += yOffset;
-                
-                rotationSuccess = true;
-                break; // 성공했으므로 'for' 루프 중단
+                break; 
             }
         }
         
-        drawPiece(); // (회전했든 안했든) 현재 위치에 다시 그리기
-        
-        // (추가) 고스트 조각도 업데이트
+        drawPiece();
         updateGhostPiece();
     }
 
     /**
-     * (신규) 블록을 즉시 바닥으로 내리고 고정시킵니다 (하드 드롭).
+     * (기존) 블록을 즉시 바닥으로 내리고 고정시킵니다 (하드 드롭).
      */
     function hardDrop() {
         if (isGameOver) return;
@@ -434,21 +409,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. 충돌 직전(yOffset - 1) 위치로 y좌표 업데이트
         currentPosition.y += (yOffset - 1);
         
-        // 4. 최종 위치에 다시 그리기 (시각적 효과)
-        drawPiece(); 
-        
-        // 5. 바로 고정
-        lockPiece();
+        drawPiece(); // 4. 최종 위치에 다시 그리기
+        lockPiece(); // 5. 바로 고정
     }
 
     /**
-     * (신규) C 키를 눌러 조각을 홀드(저장)합니다.
+     * (수정) C 키를 눌러 조각을 홀드(저장)합니다.
      */
     function holdPiece() {
-        if (isGameOver || hasSwapped) return; // 게임오버거나 이미 스왑했으면 무시
+        if (isGameOver || hasSwapped) return; 
 
-        undrawPiece(); // 현재 조각 지우기
+        undrawPiece(); 
         
+        // PIECES 배열에서 현재 조각의 원본(이름 기준)을 찾음
         const currentPieceBase = PIECES.find(p => p.name === currentPiece.name);
 
         if (heldPiece === null) {
@@ -463,10 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         hasSwapped = true; // 이번 턴에는 더 이상 스왑 불가
+        updateHoldView(heldPiece); // (추가) 홀드 UI 업데이트
     }
 
     /**
-     * (신규) 고스트 조각을 지우고, 계산하고, 새로 그립니다.
+     * (기존) 고스트 조각을 지우고, 계산하고, 새로 그립니다.
      */
     function updateGhostPiece() {
         if (isGameOver) return;
@@ -480,11 +454,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const boardY = lastGhostPosition.y + y;
                         if (boardY < GRID_HEIGHT && boardX < GRID_WIDTH) {
                             const cellIndex = boardY * GRID_WIDTH + boardX;
-                            if (gridCells[cellIndex]) {
-                                // (중요) 현재 조각과 겹치지 않는 부분만 지운다.
-                                if (!gridCells[cellIndex].classList.contains(currentPiece.color)) {
-                                     gridCells[cellIndex].classList.remove('ghost');
-                                }
+                            if (gridCells[cellIndex] && !gridCells[cellIndex].classList.contains(currentPiece.color)) {
+                                 gridCells[cellIndex].classList.remove('ghost');
                             }
                         }
                     }
@@ -492,22 +463,20 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // 2. 새 고스트 위치 계산 (하드드롭 위치와 동일한 로직)
+        // 2. 새 고스트 위치 계산
         const shape = currentPiece.shape;
-        let ghostY = currentPosition.y;
         let yOffset = 1;
-        
         while (!checkCollision(0, yOffset, shape)) {
             yOffset++;
         }
-        ghostY += (yOffset - 1); // 최종 y 위치
+        let ghostY = currentPosition.y + (yOffset - 1);
 
         // 3. 새 고스트 정보 저장
         lastGhostPosition = { x: currentPosition.x, y: ghostY };
         lastGhostShapeData = shape;
 
         // 4. 새 고스트 그리기
-        if (lastGhostPosition.y === currentPosition.y) return; // 실제 조각과 같으면 그릴 필요 없음
+        if (lastGhostPosition.y === currentPosition.y) return; 
 
         lastGhostShapeData.forEach((row, y) => {
             row.forEach((value, x) => {
@@ -516,7 +485,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     const boardY = lastGhostPosition.y + y;
                     if (boardY < GRID_HEIGHT && boardX < GRID_WIDTH) {
                         const cellIndex = boardY * GRID_WIDTH + boardX;
-                        // (중요) 'locked'된 블록 위에는 그리지 않음
                         if (gridCells[cellIndex] && !gridCells[cellIndex].classList.contains('locked')) {
                             gridCells[cellIndex].classList.add('ghost');
                         }
@@ -530,31 +498,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 6. 게임 제어 ---
 
     /**
-     * (수정) 키보드 입력 처리 (switch 문 활용)
+     * (기존) 키보드 입력 처리
      */
     function control(e) {
         if (isGameOver) return;
         
         switch (e.key) {
-            case 'ArrowLeft':
-                moveLeft();
-                break;
-            case 'ArrowRight':
-                moveRight();
-                break;
-            case 'ArrowDown':
-                moveDown(); // 소프트 드롭
-                break;
-            case 'ArrowUp':
-                rotate(); // 회전
-                break;
-            case ' ': // 스페이스 바
-                hardDrop(); // (추가) 하드 드롭
-                break;
-            case 'c': // (추가)
-            case 'C':
-                holdPiece(); // (추가) 홀드
-                break;
+            case 'ArrowLeft': moveLeft(); break;
+            case 'ArrowRight': moveRight(); break;
+            case 'ArrowDown': moveDown(); break;
+            case 'ArrowUp': rotate(); break;
+            case ' ': hardDrop(); break; // 스페이스 바
+            case 'c': // C 키
+            case 'C': holdPiece(); break;
         }
     }
 
@@ -578,19 +534,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // (추가) 홀드 초기화
         heldPiece = null;
         hasSwapped = false;
-        // (참고) 홀드 UI가 있다면 여기서 초기화
+        updateHoldView(null); // (추가) 홀드 UI 클리어
         
         gameBoardModel = Array(GRID_HEIGHT).fill(null).map(() => Array(GRID_WIDTH).fill(0));
-        
-        // gameBoard(뷰) 초기화 (updateBoardView가 고스트도 지워줌)
-        updateBoardView(); 
+        updateBoardView(); // 뷰 초기화
         
         if (gameInterval) {
             clearInterval(gameInterval);
         }
 
         spawnPiece();
-        
         gameInterval = setInterval(moveDown, 1000);
     }
 
@@ -598,6 +551,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- 7. 이벤트 리스너 연결 ---
     
     createBoard();
+    createHoldBox(); // (추가) 홀드 박스 생성
     document.addEventListener('keydown', control);
     startButton.addEventListener('click', startGame);
 

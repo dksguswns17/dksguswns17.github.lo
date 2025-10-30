@@ -13,7 +13,140 @@ body {
 h1 {
     color: #3498db;
 }
+body {
+    font-family: Arial, sans-serif;
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
 
+h1 {
+    color: #3498db;
+}
+
+.game-container {
+    display: flex;
+    gap: 30px; /* 보드와 정보 사이 간격 */
+    border: 3px solid #3498db;
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #34495e;
+}
+
+/* 게임 보드: 10칸(열) x 20칸(행) */
+#game-board {
+    display: grid;
+    /* 1fr은 1개의 동일한 비율을 의미합니다. 10개 있으니 10열. */
+    grid-template-columns: repeat(10, 30px);
+    grid-template-rows: repeat(20, 30px);
+    background-color: #283747;
+    border: 2px solid #2c3e50;
+    width: 300px; /* 10 * 30px */
+    height: 600px; /* 20 * 30px */
+}
+
+/* 보드의 각 격자 칸 */
+.grid-cell {
+    width: 30px;
+    height: 30px;
+    /* 각 칸을 구분하기 위한 옅은 테두리 */
+    box-sizing: border-box; /* 테두리가 크기에 포함되도록 설정 */
+    border: 1px solid #34495e; 
+}
+
+/* 테트로미노 조각(블록)의 색상 정의 
+  JS에서 이 클래스 이름을 추가/삭제하며 색을 칠합니다.
+*/
+.T { background-color: #9b59b6; } /* 보라색 */
+.O { background-color: #f1c40f; } /* 노란색 */
+.L { background-color: #e67e22; } /* 주황색 */
+.J { background-color: #3498db; } /* 파란색 */
+.I { background-color: #1abc9c; } /* 청록색 */
+.S { background-color: #2ecc71; } /* 초록색 */
+.Z { background-color: #e74c3c; } /* 빨간색 */
+
+/* 이미 바닥에 쌓인 블록 (고정된 블록) */
+.locked {
+    /* 이미 쌓인 블록은 약간 어둡게 처리 */
+    opacity: 0.8;
+}
+
+/* 게임 정보 및 버튼 */
+.game-info {
+    width: 150px;
+}
+
+#start-button {
+    width: 100%;
+    padding: 15px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+#start-button:hover {
+    background-color: #2980b9;
+}
+
+/* --- [수정 및 추가된 스타일] --- */
+
+/* (추가) 홀드 박스 제목 */
+.game-info h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+/* (추가) 홀드 박스 컨테이너 */
+#hold-box {
+    display: grid;
+    /* 4x4 그리드, 셀 크기 25px */
+    grid-template-columns: repeat(4, 25px); 
+    grid-template-rows: repeat(4, 25px);
+    background-color: #283747;
+    border: 2px solid #2c3e50;
+    width: 100px; /* 4 * 25px */
+    height: 100px; /* 4 * 25px */
+    margin: 0 auto; /* 가운데 정렬 */
+}
+
+/* (추가) 홀드 박스 내부 셀 */
+.hold-cell {
+    width: 25px;
+    height: 25px;
+    box-sizing: border-box;
+    border: 1px solid #34495e;
+}
+
+
+/* 고스트 피스 스타일 (기존) */
+.grid-cell.ghost {
+    background-color: rgba(200, 200, 200, 0.3);
+    opacity: 0.3;
+    z-index: 1; 
+}
+
+/* z-index 적용을 위해 position: relative 추가 (기존) */
+.grid-cell.T, .grid-cell.O, .grid-cell.L, .grid-cell.J, 
+.grid-cell.I, .grid-cell.S, .grid-cell.Z {
+    position: relative; 
+    z-index: 5; 
+}
+
+.grid-cell.locked {
+    z-index: 2;
+}
+
+/* --- [ / 수정 및 추가된 스타일] --- */
 .game-container {
     display: flex;
     gap: 30px; /* 보드와 정보 사이 간격 */
